@@ -1,0 +1,8 @@
+.dot {
+  fill: black;
+}
+
+.line {
+  stroke: black;
+  stroke-width: 1;
+}
