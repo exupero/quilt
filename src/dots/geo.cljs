@@ -1,65 +1,105 @@
 (ns dots.geo
-  (:require-macros [dots.macros :refer [spy]]))
+  (:require-macros [dots.macros :refer [spy]])
+  (:require [dots.util :as u]))
 
-(def extent (juxt #(apply min %) #(apply max %)))
-
-(def coord (juxt :x :y))
-
-(def sqr #(* % %))
-
-(def sqrt #(.sqrt js/Math %))
-
-(defn dist [[x1 y1] [x2 y2]]
-  (sqrt (+ (sqr (- x1 x2)) (sqr (- y1 y2)))))
-
-(defn dot-grid [w h count-x count-y]
-  (for [x (range 0 (inc w) (/ w (dec count-x)))
-        y (range 0 (inc h) (/ h (dec count-y)))]
-    {:type :dot :x x :y y}))
-
-(defn dot-random [w h density]
-  (let [max-count (* density (/ (* w h) 2))]
-    (loop [dots []
-           c 0]
-      (if (< c max-count)
-        (recur (conj dots {:type :dot :x (* w (rand)) :y (* h (rand))}) (inc c))
-        dots))))
-
-(defn line-checkers [dots col-offsets row-offsets]
+(defn quilt-walls [dots col-offsets row-offsets]
   (concat
-    (for [[offset column] (map vector col-offsets (vals (sort-by key (group-by :x dots))))
+    (for [[offset column] (map vector col-offsets (vals (sort-by key (group-by :column dots))))
           [a b] (->> column
-                  (sort-by :y)
+                  (sort-by :row)
                   (drop offset)
                   (partition 2 2))]
-      {:type :line
-       :x1 (a :x) :y1 (a :y)
-       :x2 (b :x) :y2 (b :y)})
-    (for [[offset row] (map vector row-offsets (vals (sort-by key (group-by :y dots))))
+      {:type :wall :points [a b]})
+    (for [[offset row] (map vector row-offsets (vals (sort-by key (group-by :row dots))))
           [a b] (->> row
-                  (sort-by :x)
+                  (sort-by :column)
                   (drop offset)
                   (partition 2 2))]
-      {:type :line
-       :x1 (a :x) :y1 (a :y)
-       :x2 (b :x) :y2 (b :y)})))
+      {:type :wall :points [a b]})))
 
-(defn drop-dots [f dots]
-  (filter f dots))
+(defn grid [cols rows]
+  (let [cells (for [col (range cols)
+                    row (range rows)]
+                {:id (gensym "cell")
+                 :column col
+                 :row row})]
+    {:shape :grid
+     :columns cols
+     :rows rows
+     :cells (u/by-id cells)}))
 
-(defn drop-inner-dots [f dots]
-  (let [[left right] (extent (map :x dots))
-        [top bottom] (extent (map :y dots))]
-    (drop-dots
-      (fn [{:keys [x y] :as dot}]
-        (or (contains? #{left right} x)
-            (contains? #{top bottom} y)
-            (f dot)))
-      dots)))
+(defn grid-vertices [{:keys [columns rows]}]
+  (for [col (range (inc columns))
+        row (range (inc rows))]
+    {:column col :row row}))
 
-(defn corridors [w h count-x count-y freq]
-  (let [dots (->> (dot-grid (- w 3) (- h 3) count-x count-y)
-               (drop-inner-dots #(<= (rand) freq)))]
-    (concat
-      dots
-      (line-checkers dots (cycle [0 1]) (cycle [0 1])))))
+(defn grid-adjacents [{:keys [cells]}]
+  (let [cells (vals cells)
+        pos->cell (into {} (map (juxt u/pos identity)) cells)
+        neighbors (fn [col row]
+                    [[(dec col) row]
+                     [(inc col) row]
+                     [col (dec row)]
+                     [col (inc row)]])
+        adjacent (fn [{:keys [column row]}]
+                   (->> (neighbors column row)
+                     (map (comp :id pos->cell))
+                     (remove nil?)
+                     set))]
+    (into {} (map (juxt :id adjacent)) cells)))
+
+(defn wall->walls [[[x1 y1] [x2 y2]]]
+  (cond
+    (= x1 x2) (let [[y1 y2] (sort [y1 y2])]
+                (for [y (range y1 y2)]
+                  [[x1 y] [x1 (inc y)]]))
+    (= y1 y2) (let [[x1 x2] (sort [x1 x2])]
+                (for [x (range x1 x2)]
+                  [[x y1] [(inc x) y1]]))
+    :else [[[x1 y1] [x2 y2]]]))
+
+(defn wall->adjacent [[x1 y1 :as p1] [x2 y2 :as p2]]
+  (cond
+    (= x1 x2) (if (< y1 y2)
+                #{[(dec x1) y1] [x2 (dec y2)]}
+                #{[x1 (dec y1)] [(dec x2) y2]})
+    (= y1 y2) (if (< x1 x2)
+                #{[x1 (dec y1)] [(dec x2) y2]}
+                #{[(dec x1) y1] [x2 (dec y2)]})
+    :else [p1 p2]))
+
+(defn unadjacent [adjacents [a b]]
+  (-> adjacents
+    (update a disj b)
+    (update b disj a)))
+
+(defn grid-walled [{:keys [cells] :as grid} walls]
+  (let [adjacents (grid-adjacents grid)
+        adjacent->ids (into {} (for [[id children] adjacents
+                                     child children]
+                                 [#{(u/pos (cells id)) (u/pos (cells child))}
+                                  [id child]]))
+        detach (comp
+                 (map :points)
+                 (map #(map u/pos %))
+                 (mapcat wall->walls)
+                 (map #(apply wall->adjacent %))
+                 (remove nil?)
+                 (map set)
+                 (map adjacent->ids))]
+    (assoc grid
+      :adjacents (transduce detach unadjacent adjacents walls)
+      :walls walls)))
+
+(defn at? [pos cell]
+  (= (u/pos pos) (u/pos cell)))
+
+(defn section [{:keys [cells adjacents]} pos]
+  (let [start (->> cells vals (filter #(at? pos %)) first :id)]
+    (loop [acc #{start}]
+      (if-let [adjacent (->> acc
+                          (mapcat adjacents)
+                          (remove acc)
+                          seq)]
+        (recur (apply conj acc adjacent))
+        acc))))

@@ -1,8 +1,112 @@
+.controls {
+  margin-bottom: 1rem;
+}
+
+.shader {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+}
+
+.shader--is-selected::after {
+  content: '';
+  display: block;
+  position: relative;
+  background-color: gray;
+  height: 0.25rem;
+  width: 1rem;
+  top: 1.25rem;
+}
+
+.shader + .shader {
+  margin-left: 1rem;
+}
+
+.shader--empty {
+  border: 1px solid lightgray;
+  box-sizing: border-box;
+}
+
+.shader--ocean {
+  background-color: dodgerblue;
+}
+
+.shader--sand {
+  background-color: gold;
+}
+
+.shader--outcrop {
+  background-color: chocolate;
+}
+
+.shader--grass {
+  background-color: yellowgreen;
+}
+
+.shader--trees {
+  background-color: forestgreen;
+}
+
+.shader--rock {
+  background-color: saddlebrown;
+}
+
+.shader--water {
+  background-color: deepskyblue;
+}
+
+.size {
+  margin-left: 5rem;
+}
+
 .dot {
   fill: black;
 }
 
-.line {
+.wall {
   stroke: black;
+}
+
+.cell {
+  fill: white;
+}
+
+.cell--visible {
+  stroke: lightgray;
   stroke-width: 1;
+}
+
+.cell--ocean {
+  fill: dodgerblue;
+}
+
+.cell--sand {
+  fill: gold;
+}
+
+.cell--outcrop {
+  fill: chocolate;
+}
+
+.cell--grass {
+  fill: yellowgreen;
+}
+
+.cell--trees {
+  fill: forestgreen;
+}
+
+.cell--rock {
+  fill: saddlebrown;
+}
+
+.cell--water {
+  fill: deepskyblue;
+}
+
+.adjacent {
+  stroke: blue;
+  stroke-width: 1;
+  stroke-dasharray: 3 2;
+  opacity: 0.7;
 }
