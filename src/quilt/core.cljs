@@ -1,12 +1,12 @@
-(ns dots.core
-  (:require-macros [dots.macros :refer [spy]])
+(ns quilt.core
+  (:require-macros [quilt.macros :refer [spy]])
   (:require [cljs.core.async :as async :refer [chan put!]]
             [cljs.core.match :refer-macros [match]]
             [vdom.elm :refer [foldp render!]]
-            [dots.geo :as geo]
-            [dots.ui :as ui]
-            [dots.util :as u]
-            [dots.update :as up]))
+            [quilt.geo :as geo]
+            [quilt.ui :as ui]
+            [quilt.util :as u]
+            [quilt.update :as up]))
 
 (enable-console-print!)
 
@@ -16,7 +16,6 @@
     [:use shade] (assoc model :using shade)
     [:size size] (assoc model :size (int size))
     [:shade-at [x y]] (let [pos (u/xy->pos [x y] (model :axes))]
-                        (spy (model :using))
                         (update model :shape up/flood pos (model :using)))))
 
 (defonce initial-model

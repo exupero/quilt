@@ -6,12 +6,12 @@
    :build-ids ["dev"]
    :all-builds
    [{:id "dev"
-     :figwheel {:on-jsload "dots.core/figwheel-reload"}
+     :figwheel {:on-jsload "quilt.core/figwheel-reload"}
      :source-paths ["src"]
      :optimizations :none
-     :compiler {:main 'dots.core
+     :compiler {:main 'quilt.core
                 :asset-path "js-dev"
-                :output-to "resources/public/js-dev/main.js"
+                :output-to "resources/public/js-dev/quilt.js"
                 :output-dir "resources/public/js-dev"
                 :verbose true}}]})
 

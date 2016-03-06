@@ -1,10 +1,10 @@
-(ns dots.ui
-  (:require-macros [dots.macros :refer [spy]])
+(ns quilt.ui
+  (:require-macros [quilt.macros :refer [spy]])
   (:require [vdom.core :as vdom]
             [vdom.hooks :refer [hook]]
-            [dots.geo :as geo]
-            [dots.util :as u]
-            [dots.update :as up]))
+            [quilt.geo :as geo]
+            [quilt.util :as u]
+            [quilt.update :as up]))
 
 (def shade->color
   {:ocean "dodgerblue"

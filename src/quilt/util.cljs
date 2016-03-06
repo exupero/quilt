@@ -1,4 +1,4 @@
-(ns dots.util)
+(ns quilt.util)
 
 (def extent (juxt #(apply min %) #(apply max %)))
 

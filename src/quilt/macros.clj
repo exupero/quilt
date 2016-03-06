@@ -1,4 +1,4 @@
-(ns dots.macros)
+(ns quilt.macros)
 
 (defmacro spy [x]
   `(let [x# ~x]

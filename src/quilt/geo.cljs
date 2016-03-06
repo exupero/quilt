@@ -1,6 +1,6 @@
-(ns dots.geo
-  (:require-macros [dots.macros :refer [spy]])
-  (:require [dots.util :as u]))
+(ns quilt.geo
+  (:require-macros [quilt.macros :refer [spy]])
+  (:require [quilt.util :as u]))
 
 (defn quilt-walls [dots col-offsets row-offsets]
   (concat

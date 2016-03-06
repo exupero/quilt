@@ -1,6 +1,6 @@
-(ns dots.update
-  (:require-macros [dots.macros :refer [spy]])
-  (:require [dots.geo :as geo]))
+(ns quilt.update
+  (:require-macros [quilt.macros :refer [spy]])
+  (:require [quilt.geo :as geo]))
 
 (defn flood [grid pos shade]
   (let [section (geo/section grid pos)
