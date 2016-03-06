@@ -30,3 +30,7 @@
 
 (defn by-id [items]
   (into {} (map (juxt :id identity)) items))
+
+(defn xy->pos [[x y] {:keys [column row]}]
+  {:column (.floor js/Math (column x))
+   :row (.floor js/Math (row y))})

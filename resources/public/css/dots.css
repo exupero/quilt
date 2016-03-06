@@ -1,3 +1,7 @@
+canvas {
+  border: 1px solid gray;
+}
+
 .controls {
   margin-bottom: 1rem;
 }
@@ -48,7 +52,7 @@
 }
 
 .shader--rock {
-  background-color: saddlebrown;
+  background-color: rgb(80, 50, 50);
 }
 
 .shader--water {
@@ -57,56 +61,4 @@
 
 .size {
   margin-left: 5rem;
-}
-
-.dot {
-  fill: black;
-}
-
-.wall {
-  stroke: black;
-}
-
-.cell {
-  fill: white;
-}
-
-.cell--visible {
-  stroke: lightgray;
-  stroke-width: 1;
-}
-
-.cell--ocean {
-  fill: dodgerblue;
-}
-
-.cell--sand {
-  fill: gold;
-}
-
-.cell--outcrop {
-  fill: chocolate;
-}
-
-.cell--grass {
-  fill: yellowgreen;
-}
-
-.cell--trees {
-  fill: forestgreen;
-}
-
-.cell--rock {
-  fill: saddlebrown;
-}
-
-.cell--water {
-  fill: deepskyblue;
-}
-
-.adjacent {
-  stroke: blue;
-  stroke-width: 1;
-  stroke-dasharray: 3 2;
-  opacity: 0.7;
 }

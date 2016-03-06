@@ -1,67 +1,43 @@
 (ns dots.ui
   (:require-macros [dots.macros :refer [spy]])
   (:require [vdom.core :as vdom]
+            [vdom.hooks :refer [hook]]
             [dots.geo :as geo]
             [dots.util :as u]
             [dots.update :as up]))
 
-(defn pair [[x y]]
-  (str x "," y))
+(def shade->color
+  {:ocean "dodgerblue"
+   :sand "gold"
+   :outcrop "chocolate"
+   :grass "yellowgreen"
+   :trees "forestgreen"
+   :rock "rgb(80, 50, 50)"
+   :water "deepskyblue"})
 
-(defn path [coords]
-  (->> coords
-    (map pair)
-    (interpose "L")
-    (apply str "M")))
-
-(defn closed-path [coords]
-  (str (path coords) "Z"))
-
-(defmulti shape (fn [s _ _] (:shape s)))
-
-(defmethod shape :grid
-  [{:keys [cells] :as grid}
-   {:keys [size show using]}
+(defn draw
+  [{:keys [cells walls columns rows] :as grid}
+   {{:keys [x y]} :axes :keys [size show using dot-size]}
    emit]
-  (let [r 1.5
-        x (u/linear [0 (grid :columns)] [r (- size r)])
-        y (u/linear [0 (grid :rows)] [r (- size r)])
-        mid #(+ 0.5 %)]
-    [:g {}
-     [:g {:class "cells"}
-      (for [{:keys [id column row shade]} (vals cells)
-            :let [left (x column)
-                  right (x (inc column))
-                  top (y row)
-                  bottom (y (inc row))]]
-        [:path {:id id
-                :class (str "cell "
-                            (if (show :cells) "cell--visible")
-                            (if shade (str "cell--" (name shade))))
-                :d (closed-path [[left top]
-                                 [right top]
-                                 [right bottom]
-                                 [left bottom]])
-                :onclick #(emit [:shade {:column column :row row}])}])]
-     (if (show :dots)
-       [:g {:class "dots"}
-        (for [{:keys [column row]} (geo/grid-vertices grid)]
-          [:circle {:class "dot" :r r :cx (x column) :cy (y row)}])])
-     [:g {:class "walls"}
-      (for [edge (grid :walls)
-            :let [[a b] (edge :points)]]
-        [:line {:class "wall"
-                :x1 (x (a :column))
-                :y1 (y (a :row))
-                :x2 (x (b :column))
-                :y2 (y (b :row))}])]
-     (if (show :adjacents)
-       [:g {:class "adjacent"}
-        (for [pair (->> grid :adjacents u/tree->pairs (map set) distinct)
-              :let [[a b] (seq pair)
-                    {scol :column srow :row} (cells a)
-                    {dcol :column drow :row} (cells b)]]
-          [:line {:class "adjacent" :x1 (x (mid scol)) :y1 (y (mid srow)) :x2 (x (mid dcol)) :y2 (y (mid drow))}])])]))
+  (fn [node _ _]
+    (let [ctx (.getContext node "2d")
+          w (/ (- size dot-size dot-size) columns)
+          h (/ (- size dot-size dot-size) rows)]
+      (.clearRect ctx 0 0 size size)
+      (set! (.-strokeStyle ctx) "black")
+      (doseq [{[a b] :points} walls]
+        (doto ctx
+          (.beginPath)
+          (.moveTo (x (a :column)) (y (a :row)))
+          (.lineTo (x (b :column)) (y (b :row)))
+          (.stroke)))
+      (doseq [{:keys [id column row shade]} (filter :shade (vals cells))]
+        (set! (.-fillStyle ctx) (spy (shade->color shade)))
+        (.fillRect ctx (x column) (y row) w h)))))
+
+(defn event-loc [el event]
+  [(- (.-pageX event) (.-offsetLeft el))
+   (- (.-pageY event) (.-offsetTop el))])
 
 (defn ui [{s :shape :keys [size shades using] :as model} emit]
   [:div {}
@@ -78,5 +54,6 @@
               :value size
               :onchange #(this-as this (emit [:size (.-value this)]))}]
      size]]
-   [:svg {:width size :height size}
-    (shape s model emit)]])
+   [:canvas {:id "canvas" :width size :height size
+             :onclick #(this-as this (emit [:shade-at (event-loc this %)]))
+             :hookDraw (hook (draw s model emit))}]])

@@ -15,12 +15,15 @@
     :no-op model
     [:use shade] (assoc model :using shade)
     [:size size] (assoc model :size (int size))
-    [:shade pos] (update model :shape up/flood pos (model :using))))
+    [:shade-at [x y]] (let [pos (u/xy->pos [x y] (model :axes))]
+                        (spy (model :using))
+                        (update model :shape up/flood pos (model :using)))))
 
-(def initial-model
+(defonce initial-model
   (let [size 1000
-        columns 50
-        rows 50
+        columns 128
+        rows 128
+        r 1.5
         grid (geo/grid columns rows)
         dot-dropper (fn [{:keys [column row]}]
                       (and (< 0 column columns)
@@ -30,6 +33,11 @@
      :show #{}
      :shades [:empty :ocean :sand :outcrop :grass :trees :rock :water]
      :using :ocean
+     :dot-size r
+     :axes {:x (u/linear [0 columns] [r (- size r)])
+            :y (u/linear [0 rows] [r (- size r)])
+            :column (u/linear [r (- size r)] [0 columns])
+            :row (u/linear [r (- size r)] [0 rows])}
      :shape (geo/grid-walled grid
               (geo/quilt-walls
                 (remove dot-dropper (geo/grid-vertices grid))
