@@ -32,7 +32,7 @@
           (.lineTo (x (b :column)) (y (b :row)))
           (.stroke)))
       (doseq [{:keys [id column row shade]} (filter :shade (vals cells))]
-        (set! (.-fillStyle ctx) (spy (shade->color shade)))
+        (set! (.-fillStyle ctx) (shade->color shade))
         (.fillRect ctx (x column) (y row) w h)))))
 
 (defn event-loc [el event]

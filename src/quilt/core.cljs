@@ -10,33 +10,39 @@
 
 (enable-console-print!)
 
+(defn axes [{:keys [columns rows size dot-size]}]
+  {:x (u/linear [0 columns] [dot-size (- size dot-size)])
+   :y (u/linear [0 rows] [dot-size (- size dot-size)])
+   :column (u/linear [dot-size (- size dot-size)] [0 columns])
+   :row (u/linear [dot-size (- size dot-size)] [0 rows])})
+
 (defn step [model action]
   (match action
     :no-op model
     [:use shade] (assoc model :using shade)
-    [:size size] (assoc model :size (int size))
+    [:size size] (let [model (assoc model :size (int size))]
+                   (assoc model :axes (axes model)))
     [:shade-at [x y]] (let [pos (u/xy->pos [x y] (model :axes))]
                         (update model :shape up/flood pos (model :using)))))
 
 (defonce initial-model
-  (let [size 1000
-        columns 128
+  (let [columns 128
         rows 128
+        size 1000
         r 1.5
         grid (geo/grid columns rows)
         dot-dropper (fn [{:keys [column row]}]
                       (and (< 0 column columns)
                            (< 0 row rows)
                            (< 0.5 (rand))))]
-    {:size size
+    {:columns columns
+     :rows rows
+     :size size
      :show #{}
      :shades [:empty :ocean :sand :outcrop :grass :trees :rock :water]
      :using :ocean
      :dot-size r
-     :axes {:x (u/linear [0 columns] [r (- size r)])
-            :y (u/linear [0 rows] [r (- size r)])
-            :column (u/linear [r (- size r)] [0 columns])
-            :row (u/linear [r (- size r)] [0 rows])}
+     :axes (axes {:columns columns :rows rows :size size :dot-size r})
      :shape (geo/grid-walled grid
               (geo/quilt-walls
                 (remove dot-dropper (geo/grid-vertices grid))
